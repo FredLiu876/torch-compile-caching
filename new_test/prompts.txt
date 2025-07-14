@@ -1,0 +1,3 @@
+Hello!
+Write a Python function to reverse a string.
+Imagine you are planning a trip to Japan. What are the top five places you would like to visit and why? Additionally, outline a detailed itinerary for a two-week stay, including cultural experiences, local cuisine you want to try, and any language or travel challenges you anticipate.
