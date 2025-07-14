@@ -1,0 +1,4 @@
+prompt,no_compile_first_run_time,no_compile_final_run_time,compile_first_run_time,compile_final_run_time,cache_first_run_time,cache_final_run_time
+What up!,0.2436532974243164,0.01930069923400879,63.4587140083313,0.0070691108703613,71.12077689170837,0.0130789279937744
+What's the weather like today in New York?,0.03734278678894043,0.018949270248413086,64.25187540054321,0.0073926448822021,70.47914290428162,0.0152642726898193
+"Imagine you are writing a book. I need you to give me character names, an idea for the plot, and a brief summary of the first chapter. You need to have relevant plot points that are engaging to the reader and set the tone for the entire book. The genre is fantasy and set in Japan. Write away!",0.043485164642333984,0.019171953201293945,0.0275120735168457,0.0073409080505371,0.0903763771057128,0.0173938274383544
