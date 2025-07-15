@@ -88,11 +88,11 @@ if __name__ == "__main__":
         elif args.phase == "run":
             pipe = init_pipe()
 
-            _, eager_dt = timed("eager 1-shot (winds up kernels)", sample_latents, pipe)
-            _, eager2_dt = timed("eager 1-shot (winds up kernels) 2", sample_latents, pipe)
+            _, eager_dt = timed("eager 1-shot (winds up kernels)", sample_latents, pipe, gen)
+            _, eager2_dt = timed("eager 1-shot (winds up kernels) 2", sample_latents, pipe, gen)
             df.loc[df["prompt"] == prompt, "no_compile_first_run_time"] = eager_dt
             df.loc[df["prompt"] == prompt, "no_compile_final_run_time"] = eager2_dt
 
         else:
             raise ValueError(f"Unknown phase: {args.phase}")
-    pd.to_csv("test_results.csv", index=False)
+    df.to_csv("test_results.csv", index=False)
