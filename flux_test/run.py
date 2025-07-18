@@ -20,18 +20,29 @@ def timed(tag, fn, *a, **kw):
     print(f"{tag:40s}{dt:8.4f} s")
     return out, dt
 
-def init_pipe():
+def init_pipe(compile=False):
     pipe = FluxPipeline.from_pretrained(
         MODEL_ID,
         torch_dtype=DTYPE,
     ).to(DEVICE)
     pipe.set_progress_bar_config(disable=True)
+    if compile:
+        self.pipe.transformer = torch.compile(
+            self.pipe.transformer, mode="max-autotune-no-cudagraphs", dynamic=False
+        )
+
+        self.pipe.vae.decode = torch.compile(
+            self.pipe.vae.decode, mode="max-autotune-no-cudagraphs", dynamic=False
+        )
     return pipe
 
-def sample_latents(pipe, generator):
+def sample_latents(pipe, prompt):
+    generator = torch.Generator(DEVICE).manual_seed(SEED)
     out = pipe(
-        prompt=PROMPT,
+        prompt=prompt,
         num_inference_steps=4,
+        width=512,
+        height=512,
         output_type="latent",
         generator=generator,
     )
@@ -46,19 +57,13 @@ if __name__ == "__main__":
         prompts = f.read().splitlines()
 
     df = pd.read_csv("test_results.csv")
-    gen = torch.Generator(DEVICE).manual_seed(SEED)
     for prompt in prompts:
         # ---------------------------------------------------------------- build ---
         if args.phase == "run_compile":
-            pipe = init_pipe()
+            pipe = init_pipe(True)
 
-            # 1️⃣ compile + warm-up
-            @torch.compile(fullgraph=False, dynamic=False, mode="max-autotune")
-            def compiled_sample():
-                return sample_latents(pipe, gen)
-
-            _, warm_dt = timed("compile + warm-up (includes codegen)", compiled_sample)
-            lat, post_dt = timed("post-compile inference", compiled_sample)
+            _, warm_dt = timed("compile + warm-up (includes codegen)", sample_latents, pipe, prompt)
+            lat, post_dt = timed("post-compile inference", sample_latents, pipe, prompt)
 
             df.loc[df["prompt"] == prompt, "compile_first_run_time"] = warm_dt
             df.loc[df["prompt"] == prompt, "compile_final_run_time"] = post_dt
@@ -78,8 +83,8 @@ if __name__ == "__main__":
             def compiled_sample():
                 return sample_latents(pipe, gen)
 
-            _, warm_dt = timed("loaded_cache warm-up (includes codegen)", compiled_sample)
-            lat, post_dt = timed("post-compile inference", compiled_sample)
+            _, warm_dt = timed("loaded_cache warm-up (includes codegen)", sample_latents, pipe, prompt)
+            lat, post_dt = timed("post-compile inference", sample_latents, pipe, prompt)
 
             df.loc[df["prompt"] == prompt, "cache_first_run_time"] = warm_dt
             df.loc[df["prompt"] == prompt, "cache_final_run_time"] = post_dt
@@ -88,8 +93,8 @@ if __name__ == "__main__":
         elif args.phase == "run":
             pipe = init_pipe()
 
-            _, eager_dt = timed("eager 1-shot (winds up kernels)", sample_latents, pipe, gen)
-            _, eager2_dt = timed("eager 1-shot (winds up kernels) 2", sample_latents, pipe, gen)
+            _, eager_dt = timed("eager 1-shot (winds up kernels)", sample_latents, pipe, prompt)
+            _, eager2_dt = timed("eager 1-shot (winds up kernels) 2", sample_latents, pipe, prompt)
             df.loc[df["prompt"] == prompt, "no_compile_first_run_time"] = eager_dt
             df.loc[df["prompt"] == prompt, "no_compile_final_run_time"] = eager2_dt
 
