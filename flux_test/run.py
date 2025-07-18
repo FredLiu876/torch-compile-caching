@@ -27,12 +27,12 @@ def init_pipe(compile=False):
     ).to(DEVICE)
     pipe.set_progress_bar_config(disable=True)
     if compile:
-        self.pipe.transformer = torch.compile(
-            self.pipe.transformer, mode="max-autotune-no-cudagraphs", dynamic=False
+        pipe.transformer = torch.compile(
+            pipe.transformer, mode="max-autotune-no-cudagraphs", dynamic=False
         )
 
-        self.pipe.vae.decode = torch.compile(
-            self.pipe.vae.decode, mode="max-autotune-no-cudagraphs", dynamic=False
+        pipe.vae.decode = torch.compile(
+            pipe.vae.decode, mode="max-autotune-no-cudagraphs", dynamic=False
         )
     return pipe
 
@@ -77,11 +77,7 @@ if __name__ == "__main__":
             torch.compiler.load_cache_artifacts(open(CACHE_FILE, "rb").read())
             print("Mega-Cache hydrated — expect instant start-up\n")
 
-            pipe = init_pipe()
-
-            @torch.compile(fullgraph=False, dynamic=False, mode="max-autotune")
-            def compiled_sample():
-                return sample_latents(pipe, gen)
+            pipe = init_pipe(True)
 
             _, warm_dt = timed("loaded_cache warm-up (includes codegen)", sample_latents, pipe, prompt)
             lat, post_dt = timed("post-compile inference", sample_latents, pipe, prompt)
